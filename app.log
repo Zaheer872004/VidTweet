@@ -397,3 +397,4 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"\n MongoDB connected ! DB host : vidtweetcluster-shard-00-00.izjfe.mongodb.net","timestamp":"2024-09-08T08:37:20.364Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\n MongoDB connected ! DB host : vidtweetcluster-shard-00-00.izjfe.mongodb.net","timestamp":"2024-09-08T08:37:22.697Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\n MongoDB connected ! DB host : vidtweetcluster-shard-00-02.izjfe.mongodb.net","timestamp":"2024-09-08T08:37:28.954Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\n MongoDB connected ! DB host : vidtweetcluster-shard-00-01.izjfe.mongodb.net","timestamp":"2024-09-08T08:38:52.784Z"}
