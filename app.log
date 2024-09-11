@@ -398,3 +398,7 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"\n MongoDB connected ! DB host : vidtweetcluster-shard-00-00.izjfe.mongodb.net","timestamp":"2024-09-08T08:37:22.697Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\n MongoDB connected ! DB host : vidtweetcluster-shard-00-02.izjfe.mongodb.net","timestamp":"2024-09-08T08:37:28.954Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\n MongoDB connected ! DB host : vidtweetcluster-shard-00-01.izjfe.mongodb.net","timestamp":"2024-09-08T08:38:52.784Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/healthcheck/test/\",\"status\":\"404\",\"responseTime\":\"1.846\"}","timestamp":"2024-09-11T05:00:41.962Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/healthcheck\",\"status\":\"404\",\"responseTime\":\"0.429\"}","timestamp":"2024-09-11T05:01:24.703Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/healthcheck\",\"status\":\"200\",\"responseTime\":\"2.114\"}","timestamp":"2024-09-11T05:01:46.900Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/healthcheck/test/\",\"status\":\"200\",\"responseTime\":\"0.478\"}","timestamp":"2024-09-11T05:01:53.531Z"}

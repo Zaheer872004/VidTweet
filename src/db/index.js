@@ -8,7 +8,8 @@ const dbConnect = async () => {
         const dbInstance = await mongoose.connect(`${process.env.MONGODB_URI}/vidTweet`);
 
         // console.log(dbInstance.connection.host);
-        logger.info(`\n MongoDB connected ! DB host : ${dbInstance.connection.host}`)
+        // logger.info(`\n MongoDB connected ! DB host : ${dbInstance.connection.host}`)
+        console.log(`\n MongoDB connected ! DB host : ${dbInstance.connection.host}`)
 
     } catch (error) {
         console.log("Error in dbConnect now : ",error);

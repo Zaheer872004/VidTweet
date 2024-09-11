@@ -43,24 +43,26 @@ const userSchema = new Schema(
     },{timestamps : true}
 )
 
-
+// Just before to save in dababase we hased the password.
 userSchema.pre("save", async function (next){
 
 
-    if(!this.isModified("password")) return next()
-
-    // here hashing the plantextpassword
-    const salt =  bcrypt.genSalt(process.env.SALTROUNDS);
-    const hash =  bcrypt.hash(this.password, salt);
-    this.password = hash;
-
+    if(this.isModified("password")){
+        // here hashing the plantextpassword
+        const salt =  bcrypt.genSalt(process.env.SALTROUNDS);
+        const hash =  bcrypt.hash(this.password, salt);
+        this.password = hash;
+    }
 
     next();
+
 })
 
+// We make the method like findOne, isPasswordCorrect gives / return = true / false.
 userSchema.methods.isPasswordCorrect = async function (password) {
     
     return await bcrypt.compare(password,this.password);
+
 }
 
 userSchema.methods.generateAccessToken = function () {
@@ -91,4 +93,6 @@ userSchema.methods.generateRefreshToken = function () {
 
 }
 
+
 export const User = mongoose.model("User",userSchema);
+

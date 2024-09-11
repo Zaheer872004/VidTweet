@@ -3,7 +3,7 @@ import  dbConnect  from "./db/index.js";
 import logger from "./helper/logger.js";
 logger
 import dotenv from "dotenv";
-dotenv.config({})
+dotenv.config({}) // automatically detect the .env file 
 
 
 const PORT = process.env.PORT || 4000
@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 4000
 
 // console.log()
 
+// when dbConnected Successfully then only we say server running successfully.
 dbConnect()
 .then(
     () => {
