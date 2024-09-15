@@ -10,13 +10,13 @@ const userSchema = new Schema(
             type : String,
             required : true,
             trim : true,
-            unique : true
+            unique : true,
+            index : true,
         },
         fullName : {
             type : String,
             unique : true,
             required : true,
-            index : true,
         },
         email :  { 
             type : String,
@@ -36,6 +36,12 @@ const userSchema = new Schema(
         coverImage : {
             type : String, // cloudinary url
         },
+        watchHistory :[
+            {
+                type : Schema.Types.ObjectId,
+                ref : "Video"
+            }
+        ],
         refreshToken:{
             type : String,
         }
@@ -45,16 +51,22 @@ const userSchema = new Schema(
 
 // Just before to save in dababase we hased the password.
 userSchema.pre("save", async function (next){
+    
 
-
-    if(this.isModified("password")){
-        // here hashing the plantextpassword
-        const salt =  bcrypt.genSalt(process.env.SALTROUNDS);
-        const hash =  bcrypt.hash(this.password, salt);
-        this.password = hash;
+    if(!this.isModified("password")){
+      return next()
     }
 
-    next();
+     // here hashing the plantextpassword
+     const saltRound = Number(process.env.SALT_ROUNDS)
+
+     // const salt =  bcrypt.genSalt(saltRound);
+     console.log(saltRound)
+     this.password = await bcrypt.hash(this.password, saltRound);
+     // this.password = hash;
+     console.log(this.password);
+
+    return next();
 
 })
 

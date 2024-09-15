@@ -8,7 +8,7 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) {
       const randomNumber = Math.floor(Math.random() * 90000 + 10000); // Generate random 5 digits number generated.
     //   console.log(randomNumber)
-      cb(null, file.originalname + '_' + randomNumber)
+      cb(null, file.originalname + '_' + randomNumber);
     }
   })
   
