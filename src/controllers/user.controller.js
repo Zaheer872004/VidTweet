@@ -4,10 +4,13 @@ import { ApiError } from "../helper/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary , deleteOnCloudinary } from "../helper/cloudinary.js"
 import { ApiResponse } from "../helper/ApiResponse.js"
+import { generateAccessAndRefreshToken } from "../helper/generateTokens.js"
+import { options } from "../helper/HttpOption.js"
+import { sendEmail } from "../helper/SentEmail.js"
+import { randomNumber } from "../helper/fiveDigitsRandomNo.js";
+import jwt from "jsonwebtoken"
 
-
-
-
+// User Registeration controller...
 
 const registerUser = asyncHandler(async (req, res) => {
     // here Algorithm...
@@ -73,6 +76,8 @@ const registerUser = asyncHandler(async (req, res) => {
     // here uploading the avatar on cloudinary...
     let avatar;
     // logger.warn("value of avatarlocalpath : "+avatarlocalpath)
+
+    // uploadin the avatar on cloudinary...
     try {
 
         avatar = await uploadOnCloudinary(avatarlocalpath);
@@ -89,6 +94,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // here uploading the coverImage on cloudinary...
     // logger.warn("value of avatarlocalpath : "+coverlocalpath)
+
+    // uploading the coverImage on cloudinary...
     let coverImage;
     try {
 
@@ -99,6 +106,16 @@ const registerUser = asyncHandler(async (req, res) => {
 
     }
 
+    const otp = randomNumber();
+    const emailSends = await sendEmail(email,username,otp);
+    
+    // not have success method directly...
+    // if(emailSends.success){
+    // console.log("Email send successfully")
+
+    // }
+
+    // Saving the user in the db
     try {
         const user = await User.create({
             fullName,
@@ -106,7 +123,9 @@ const registerUser = asyncHandler(async (req, res) => {
             email,
             password,
             avatar: avatar.url,
-            coverImage: coverImage?.url || ""
+            coverImage: coverImage?.url || "",
+            verifyCode:otp,
+            verifyCodeExpiry : new Date( Date.now() + 60 * 60 *1000 ),
         })
     
         const data = await User.findById(user._id).select("-password -refreshToken");
@@ -144,11 +163,181 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
+// Verify User email with otp code...
+
+const emailVerifyUser = asyncHandler( async(req,res) => {
+
+    const { otp } = req.body;
+    const { username } = req.params;
+
+    if([otp,username].some((val) => val.trim() === "")){
+        throw new ApiError(400,"Please provide full Credentials");
+    }
+
+    // Find the user by username
+    const user = await User.findOne({ username });
+
+    if (!user) {
+        throw new ApiError(400, "Invalid username | Provide a valid username");
+    }
+
+    // Check OTP length
+    if (otp.length !== 5) {
+        throw new ApiError(400, "Invalid OTP. OTP must be a 5-digit number");
+    }
+
+    // Check if OTP is expired
+    if (user.verifyCodeExpiry < Date.now()) {
+        throw new ApiError(400, "OTP has expired. Please register again");
+    }
+
+    // Check if OTP matches
+    if (user.verifyCode !== otp.toString()) {
+        throw new ApiError(400, "Invalid OTP. Please provide the correct one");
+    }
+
+    // Mark user as verified
+    user.isVerified = true;
+    await user.save();
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "",
+            "User email verified successfully"
+        )
+    );
+
+
+
+})
+
+
+// refreshAccessToken created when accessToken expired
+const refreshAccessToken = asyncHandler( async (req,res) => {
+
+    
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if(!incomingRefreshToken){
+        throw new ApiError(400,"Provide the refreshToken");
+    }
+
+    try {
+
+        const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET);
+
+        const user = await User.findById(decodedToken?._id);
+
+        if(!user){
+            throw new ApiError(400,"provide valid refresh token");
+        }
+
+        if(user.refreshToken !== incomingRefreshToken){
+            throw new ApiError(400,"refresh token incorrect");
+        }
+
+        const {accessToken,refreshToken: newRefreshToken} = await generateAccessAndRefreshToken(user._id);
+
+        return res
+            .status(200)
+            .cookie("accessToken",accessToken,options)
+            .cookie("refreshToken",newRefreshToken,options)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        accessToken,
+                        refreshToken : newRefreshToken,
+                    }
+                )
+            )
+
+
+    } catch (error) {
+        console.log("Error while refreshing the Access token : "+error);
+        throw new ApiError(400,"Error while refreshing the Access token")
+    }
+
+})
+
+
+// User Login Controller...
+
+const loginUser = asyncHandler( async (req,res)=> {
+
+    const {email, password,} = req.body;
+
+    if([email,password].some((field) => field.trim() === "")){
+        throw new ApiError(400,"Provide full Credentials");
+    }
+
+    const user = await User.findOne({email});
+
+    if(!user){
+        throw new ApiError(400,"Please Register first then login");
+    }
+
+    // password checking...
+    const isPasswdCorrect = await user.isPasswdCorrectCheck(password);
+
+    if(!isPasswdCorrect){
+        throw new ApiError(400,"Please provide correct password");
+    }
+
+    // generate refresh token and access token
+    const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id);
+
+    // inResponse removed the password and refreshToken...
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+    // saved in the cookies of this access and refresh tokens.
+    return res
+        .status(200)
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    loggedInUser,
+                    accessToken,
+                    refreshToken
+                },
+                "User LoggedIn Successfully"
+            )
+        )
+
+})
+
+// User Logout controller...
+const logoutUser = asyncHandler( async (req,res) => {
+
+    const userId = req.user.id;
+    // we need to delete the accessToken and refreshToken of userId
+
+    return res
+        .status(200)
+        .cookie("accessToken","",options)
+        .cookie("refreshToken","",options)
+        .json(
+            new ApiResponse(
+                200,
+                "",
+                "User loggedOut Successfully"
+            )
+        )
+
+})
+
 
 
 
 export {
     registerUser,
+    emailVerifyUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
 }
-
 

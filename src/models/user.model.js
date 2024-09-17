@@ -44,6 +44,18 @@ const userSchema = new Schema(
         ],
         refreshToken:{
             type : String,
+        },
+
+        // adding more field for validating the email
+        verifyCode: { 
+            type: String 
+        },
+        verifyCodeExpiry: { 
+            type: Date 
+        },
+        isVerified: { 
+            type: Boolean, 
+            default: false 
         }
 
     },{timestamps : true}
@@ -71,7 +83,7 @@ userSchema.pre("save", async function (next){
 })
 
 // We make the method like findOne, isPasswordCorrect gives / return = true / false.
-userSchema.methods.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrectCheck = async function (password) {
     
     return await bcrypt.compare(password,this.password);
 
