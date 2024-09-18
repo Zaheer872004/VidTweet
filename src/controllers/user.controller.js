@@ -170,7 +170,7 @@ const emailVerifyUser = asyncHandler( async(req,res) => {
     const { otp } = req.body;
     const { username } = req.params;
 
-    if([otp,username].some((val) => val.trim() === "")){
+    if([otp,username].some((val) => val?.trim() === "")){
         throw new ApiError(400,"Please provide full Credentials");
     }
 
@@ -182,7 +182,7 @@ const emailVerifyUser = asyncHandler( async(req,res) => {
     }
 
     // Check OTP length
-    if (otp.length !== 5) {
+    if (otp?.length !== 5) {
         throw new ApiError(400, "Invalid OTP. OTP must be a 5-digit number");
     }
 
@@ -239,6 +239,16 @@ const refreshAccessToken = asyncHandler( async (req,res) => {
 
         const {accessToken,refreshToken: newRefreshToken} = await generateAccessAndRefreshToken(user._id);
 
+        const updateUser = await User.findByIdAndUpdate(
+            user._id,
+            {
+                refreshToken : newRefreshToken
+            },
+            {
+                new : true
+            }
+        )
+
         return res
             .status(200)
             .cookie("accessToken",accessToken,options)
@@ -249,7 +259,8 @@ const refreshAccessToken = asyncHandler( async (req,res) => {
                     {
                         accessToken,
                         refreshToken : newRefreshToken,
-                    }
+                    },
+                    "Access token refreshed successfully"
                 )
             )
 
@@ -266,9 +277,9 @@ const refreshAccessToken = asyncHandler( async (req,res) => {
 
 const loginUser = asyncHandler( async (req,res)=> {
 
-    const {email, password,} = req.body;
+    const {email, password} = req.body;
 
-    if([email,password].some((field) => field.trim() === "")){
+    if([email,password].some((field) => field?.trim() === "")){
         throw new ApiError(400,"Provide full Credentials");
     }
 
@@ -279,7 +290,7 @@ const loginUser = asyncHandler( async (req,res)=> {
     }
 
     // password checking...
-    const isPasswdCorrect = await user.isPasswdCorrectCheck(password);
+    const isPasswdCorrect = await user.isPasswordCorrect(password);
 
     if(!isPasswdCorrect){
         throw new ApiError(400,"Please provide correct password");
@@ -313,22 +324,39 @@ const loginUser = asyncHandler( async (req,res)=> {
 // User Logout controller...
 const logoutUser = asyncHandler( async (req,res) => {
 
-    const userId = req.user.id;
+    const userId = req.user._id;
+    // console.log(req.user);
+
     // we need to delete the accessToken and refreshToken of userId
+
+    const user = await User.findByIdAndUpdate(userId,
+        {
+            refreshToken: "",
+        },
+        {
+            new : true
+        }
+    
+    ).select("-password -refreshToken");
+
+    if(!user){
+        throw new ApiError(400,"User not exists");
+    }
 
     return res
         .status(200)
-        .cookie("accessToken","",options)
-        .cookie("refreshToken","",options)
+        .cookie("accessToken","",{ ...options, expires: new Date(0)})
+        .cookie("refreshToken","",{ ...options, expires: new Date(0)})
         .json(
             new ApiResponse(
                 200,
-                "",
+                user,
                 "User loggedOut Successfully"
             )
         )
 
 })
+
 
 
 

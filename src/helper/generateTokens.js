@@ -5,7 +5,7 @@
 import { User } from "../models/user.model.js"
 import { ApiError } from "./ApiError.js";
 
-const generateAccessAndRefreshToken = async function (userId){
+const generateAccessAndRefreshToken = async (userId) => {
 
     try {
         
@@ -16,8 +16,8 @@ const generateAccessAndRefreshToken = async function (userId){
             throw new ApiError(400,'User not exists');
         }
 
-        const accessToken = user.generateAccessToken();
-        const refreshToken = user.generateRefreshToken();
+        const accessToken =  user.generateAccessToken();
+        const refreshToken =  user.generateRefreshToken();
 
         user.refreshToken = refreshToken;
         await user.save();

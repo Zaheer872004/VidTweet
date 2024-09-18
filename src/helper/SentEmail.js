@@ -10,14 +10,14 @@ const sendEmail = async (userEmail, username, password) => {
 
   try {
     const { data, error } = await resend.emails.send({
-        from: 'zaheer.224246108@vcet.edu.in',  // Sender information
+        from: 'zaheerkhan.com',  // Sender information
     //   to: [userEmail],  
         to: [userEmail],
         subject: 'Your Account Information | OTP for login',  // Email subject
         html: `
         <p>Hello ${username},</p>
         <p>Your new password is : <strong>${password}</strong></p>
-        <p>Please use this password to log in to your account.</p>
+        <p>Please use this password to verify your email to your account.</p>
       `,  // Email body with the username and password
     });
 
