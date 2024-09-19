@@ -26,6 +26,10 @@ const registerUser = asyncHandler(async (req, res) => {
     */
 
     const { fullName, username, email, password } = req.body;
+    // console.log("Here req object is : "+ await req);
+    console.log("req file data : ", req.file);
+    console.log("req files data : ", req.files);
+
 
     /* either use below or another below one */
     // if(
@@ -321,6 +325,7 @@ const loginUser = asyncHandler( async (req,res)=> {
 
 })
 
+
 // User Logout controller...
 const logoutUser = asyncHandler( async (req,res) => {
 
@@ -345,8 +350,8 @@ const logoutUser = asyncHandler( async (req,res) => {
 
     return res
         .status(200)
-        .cookie("accessToken","",{ ...options, expires: new Date(0)})
-        .cookie("refreshToken","",{ ...options, expires: new Date(0)})
+        .clearCookie("accessToken",options)
+        .clearCookie("refreshToken",options)
         .json(
             new ApiResponse(
                 200,
@@ -358,6 +363,255 @@ const logoutUser = asyncHandler( async (req,res) => {
 })
 
 
+// change current user password
+const changeUserPassword = asyncHandler( async (req,res) => {
+    
+    const userId = req.user._id;
+
+    const {oldPassword, newPassword, confirmPassword} = req.body;
+
+    if([oldPassword,newPassword,confirmPassword].some((field) => field?.trim() === "")){
+        throw new ApiError(400,"Provide full Credentials");
+    }
+
+    const user = await User.findById(userId);
+
+    if(!user){
+        throw new ApiError(400,"User not exists");
+    }
+
+    const isPasswdCorrect = await req.user.isPasswdCorrect(oldPassword);
+
+    if(!isPasswdCorrect){
+        throw new ApiError(400,"Please provide correct password");
+    }
+
+    if(newPassword !== confirmPassword){
+        throw new ApiError(400,"Please provide same password newPassword and confirmPassword not match");
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    oldPassword,
+                    newPassword,
+                    confirmPassword
+                },
+                "Password changed successfully"
+            )
+        )
+
+
+
+})
+
+const getCurrentUser = asyncHandler( async (req,res) => {
+
+
+    const userId = req.user._id;
+
+    // No need of checking here because we already checked in the middleware...
+    // if exectution comes here means user is exist and it is authenticated...
+    const user = await User.findById(userId);
+
+    if(!user){
+        throw new ApiError(400,"User not exists");
+    }
+
+    return res
+        .status(200)
+        .json(
+
+            new ApiResponse(
+                200,
+                user,  // here we can directly return the req.user
+                "User fetched successfully"
+            )
+        )
+
+
+})
+
+
+// update the user details...
+
+const updateAccountDetails = asyncHandler( async (req,res) => {
+    
+    const userId = req.user._id;
+    const { username, fullName } = req.body;
+
+    // here we don't check the username and fullname comes or not because it might we user only change the username or fullname...
+
+    // but outoff two one field is required...
+    if( !username && !fullName){
+        throw new ApiError(400,"Provide atleast one field to update either username or fullname");
+    }
+
+    const user = await User.findById(userId);
+
+    if(!user){
+        throw new ApiError(400,"User not exists");
+    }
+
+    if(username){
+        user.username = username;
+    }
+    
+    if( fullName ){
+        user.fullName = fullName;
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(userId).select("-password -refreshToken");
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    updatedUser
+                },
+                "Account details updated successfully"
+            )
+        )
+
+
+})
+
+
+// update the user avatar image...
+
+const updateUserAvatar = asyncHandler( async (req,res) => {
+    
+    const userId = req.user._id;
+    
+    const avatarlocalpath = req.file.path;
+
+    if(!avatarlocalpath){
+        throw new ApiError(400,"Please provide avatarlocalpath");
+    }
+
+    let avatar;
+
+    try {
+        avatar = uploadOnCloudinary(avatarlocalpath);
+
+        if(!avatar.url){
+            throw new ApiError(400,"avatar.url not found");
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {
+                $set : {
+                    avatar: avatar.url
+                }
+            },
+            {
+                new : true
+            }
+        ).select("-password -refreshToken");
+
+        if(!user){
+            throw new ApiError(400,"User not exists | avatar update failed");
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        user
+                    },
+                    "Avatar updated successfully"       
+                )
+            )
+
+    } catch (error) {
+
+        if(avatar){
+            await deleteOnCloudinary(avatar.public_id);
+            console.log("avatar file deleted while failing to upload on cloudinary...",avatar.public_id);
+        }
+
+        console.log("Error in uploading avatar on cloudinary", error);
+        throw new ApiError(500,"Internal server error Inside the catch part of updateUserAvatar");
+    }
+
+
+})
+
+// update the user coverImage...
+
+const updateUserCoverImage = asyncHandler( async (req,res) => {
+    
+    const userId = req.user._id;
+    
+    const coverImagelocalpath = req.file.path;
+
+    if(!coverImagelocalpath){
+        throw new ApiError(400,"Please provide coverImagelocalpath");
+    }
+
+    let coverImage;
+
+    try {
+        coverImage = uploadOnCloudinary(coverImagelocalpath);
+
+        if(!coverImage.url){
+            throw new ApiError(400,"coverImage.url not found");
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {
+                $set : {
+                    coverImage: coverImage.url
+                }
+            },
+            {
+                new : true
+            }
+        ).select("-password -refreshToken");
+
+        if(!user){
+            throw new ApiError(400,"User not exists | coverImage update failed");
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        user
+                    },
+                    "coverImage updated successfully"       
+                )
+            )
+
+    } catch (error) {
+
+        if(avatar){
+            await deleteOnCloudinary(coverImage.public_id);
+            console.log("coverImage file deleted while failing to upload on cloudinary...",coverImage.public_id);
+        }
+
+        console.log("Error in uploading coverImage on cloudinary", error);
+        throw new ApiError(500,"Internal server error Inside the catch part of updateUserCoverImage");
+    }
+
+
+})
 
 
 
@@ -367,5 +621,11 @@ export {
     loginUser,
     logoutUser,
     refreshAccessToken,
+    changeUserPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage,
+
 }
 

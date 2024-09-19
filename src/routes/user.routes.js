@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { upload } from "../middleware/multer.middleware.js"
 import { 
+  changeUserPassword,
   emailVerifyUser, 
+  getCurrentUser, 
   loginUser, 
   logoutUser, 
   refreshAccessToken, 
@@ -39,8 +41,15 @@ router.route("/refresh-access-token").post(refreshAccessToken)
 
 router.route("/logout").get(verifyJWT,logoutUser)
 
+router.route("/change-password").post(verifyJWT,changeUserPassword)
 
+router.route("/get-user").get(verifyJWT,getCurrentUser)
 
+router.route("/update-account-details").post(verifyJWT,updateAccountDetails)
+
+router.route("/update-avatar").post(verifyJWT,upload.single("avatar"),updateUserAvatar)
+
+router.route("/update-cover-image").post(verifyJWT,upload.single("coverImage"),updateUserCoverImage)
 
 
 export default router;
