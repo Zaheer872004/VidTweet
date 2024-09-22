@@ -2,12 +2,17 @@ import { Router } from "express";
 import { upload } from "../middleware/multer.middleware.js"
 import { 
   changeUserPassword,
+  getchannelDetails,
   emailVerifyUser, 
   getCurrentUser, 
+  getWatchHistory, 
   loginUser, 
   logoutUser, 
   refreshAccessToken, 
-  registerUser 
+  registerUser, 
+  updateAccountDetails,
+  updateUserAvatar,
+  updateUserCoverImage
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middleware/getUser.middleware.js";
 
@@ -41,15 +46,22 @@ router.route("/refresh-access-token").post(refreshAccessToken)
 
 router.route("/logout").get(verifyJWT,logoutUser)
 
-router.route("/change-password").post(verifyJWT,changeUserPassword)
+router.route("/change-password").patch(verifyJWT,changeUserPassword)
 
 router.route("/get-user").get(verifyJWT,getCurrentUser)
 
-router.route("/update-account-details").post(verifyJWT,updateAccountDetails)
+router.route("/update-account-details").patch(verifyJWT,updateAccountDetails)
 
-router.route("/update-avatar").post(verifyJWT,upload.single("avatar"),updateUserAvatar)
+router.route("/update-avatar").patch(verifyJWT,upload.single("avatar"),updateUserAvatar)
 
-router.route("/update-cover-image").post(verifyJWT,upload.single("coverImage"),updateUserCoverImage)
+router.route("/update-cover-image").patch(verifyJWT,upload.single("coverImage"),updateUserCoverImage)
+
+// here mongodb aggregation pipeline
+
+router.route("/getChannel-details/:username").get(verifyJWT,getchannelDetails)
+
+router.route("/getWatchHistory").get(verifyJWT,getWatchHistory)
+
 
 
 export default router;
