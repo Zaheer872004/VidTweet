@@ -56,7 +56,7 @@ router.route("/update-avatar").patch(verifyJWT,upload.single("avatar"),updateUse
 
 router.route("/update-cover-image").patch(verifyJWT,upload.single("coverImage"),updateUserCoverImage)
 
-// here mongodb aggregation pipeline
+// here mongodb aggregation pipeline started...  
 
 router.route("/getChannel-details/:username").get(verifyJWT,getchannelDetails)
 
