@@ -47,9 +47,16 @@ app.use(
 // routes import and middleware here...
 import heathCheckRoutes from "./routes/health-check.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import videoRoutes from "./routes/video.routes.js";
 
 app.use("/api/v1/healthcheck", heathCheckRoutes);
+
+// Here users routes middleware
 app.use('/api/v1/users',userRoutes);
+
+// Here videos routes middleware
+app.use("/api/v1/videos",videoRoutes);
+
 
 
 

@@ -620,3 +620,6 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/users/getChannel-details/jane_smith\",\"status\":\"200\",\"responseTime\":\"120.340\"}","timestamp":"2024-09-22T06:36:27.773Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/users/getChannel-details/jane_smith\",\"status\":\"200\",\"responseTime\":\"25.433\"}","timestamp":"2024-09-22T06:36:54.294Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/users/getWatchHistory\",\"status\":\"200\",\"responseTime\":\"18.237\"}","timestamp":"2024-09-22T06:37:39.362Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"GET\",\"url\":\"/api/v1/videos/video-testing\",\"status\":\"200\",\"responseTime\":\"1.783\"}","timestamp":"2024-09-23T16:39:06.723Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"POST\",\"url\":\"/api/v1/videos/video\",\"status\":\"201\",\"responseTime\":\"6079.875\"}","timestamp":"2024-09-23T17:53:48.740Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\"method\":\"POST\",\"url\":\"/api/v1/videos/video\",\"status\":\"500\",\"responseTime\":\"12223.547\"}","timestamp":"2024-09-23T17:55:34.520Z"}
