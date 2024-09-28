@@ -644,13 +644,26 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const totalPages = Math.ceil(totalVideos / limitNumber);
     console.log(10/5);
 
+    const response  = await Video.aggregatePaginate(
+        getAllVideos,
+        {
+            pageNumber,
+            limitNumber, 
+        }
+    )
+
+    if(!response) {
+        throw new ApiError(400,"unable to get the videos")
+    }
+
+
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
                 {
-                    videos,
+                    response,
                     totalVideos,
                     totalPages,
                     currentPage: pageNumber,
@@ -674,16 +687,6 @@ export {
 }
 
 
-/*
-
-const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
-})
-
-
-
-*/
 
 
 

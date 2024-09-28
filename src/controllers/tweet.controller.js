@@ -134,6 +134,9 @@ const getUserTweets = asyncHandler(async (req, res) => {
         options
     )
 
+    if(!response) {
+        throw new ApiError(400,"unable to get the User tweets")
+    }
 
     return res
         .status(200)
@@ -221,12 +224,16 @@ const deleteTweet = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Unable to delete tweet");
     }
 
-    await Like.deleteMany(
+    const likedDeleted = await Like.deleteMany(
         {
             tweet : tweetId,
             likedBy : req.user?._id,
         }
     )
+
+    if(!likedDeleted){
+        throw new ApiError(400,"unable to delete the like of the tweet");
+    }
 
 
     return res
