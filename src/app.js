@@ -48,6 +48,9 @@ app.use(
 import heathCheckRoutes from "./routes/health-check.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import videoRoutes from "./routes/video.routes.js";
+import tweetRoutes from "./routes/tweet.routes.js"
+import commentRoutes from "./routes/comment.routes.js"
+import playlistRoutes from "./routes/playlist.routes.js"
 
 app.use("/api/v1/healthcheck", heathCheckRoutes);
 
@@ -57,13 +60,21 @@ app.use('/api/v1/users',userRoutes);
 // Here videos routes middleware
 app.use("/api/v1/videos",videoRoutes);
 
+// Here tweet routes middleware
+app.use("/api/v1/tweet",tweetRoutes);
+
+// Here comment routes middleware
+app.use("/api/v1/comment",commentRoutes);
+
+// Here playlist routes middleware
+app.use("/api/v1/playlist",playlistRoutes);
 
 
 
 
 
 
-
+// here our custom error response middleware
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

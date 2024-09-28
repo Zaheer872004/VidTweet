@@ -331,6 +331,12 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Please provide videoId");
     }
 
+    const videoExist = await Video.findById(videoId);
+
+    if(videoExist?.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(400, "You are not authorized to delete this video");
+    }
+
     const video = await Video.findByIdAndUpdate(videoId,
         {
             $set : {
