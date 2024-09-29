@@ -249,13 +249,7 @@ const getAllCommentVideo = asyncHandler( async (req,res) => {
                 "Comment get successfully"
             )
         )
-
-
 })
-
-
-
-
 
 
 export {

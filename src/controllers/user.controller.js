@@ -8,7 +8,7 @@ import {
 } from "../helper/cloudinary.js"
 import { ApiResponse } from "../helper/ApiResponse.js"
 import { generateAccessAndRefreshToken } from "../helper/generateTokens.js"
-import { options } from "../helper/HttpOption.js"
+import { options } from "../helper/cookiesOption.js"
 import { sendEmail } from "../helper/SentEmail.js"
 import { randomNumber } from "../helper/fiveDigitsRandomNo.js";
 import jwt from "jsonwebtoken"
@@ -369,9 +369,9 @@ const logoutUser = asyncHandler(async (req, res) => {
         )
 
 })
-            
-            
-            
+
+
+
 // change current user password...
 const changeUserPassword = asyncHandler(async (req, res) => {
 
