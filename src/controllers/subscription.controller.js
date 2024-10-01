@@ -50,7 +50,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
             new ApiResponse(
                 200,
                 {
-                    data : subscription
+                    subscription
                 },
                 "Subscription toggled successfully"
             )
