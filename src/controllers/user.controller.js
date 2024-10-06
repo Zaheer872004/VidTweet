@@ -12,6 +12,8 @@ import { options } from "../helper/cookiesOption.js"
 import { sendEmail } from "../helper/SentEmail.js"
 import { randomNumber } from "../helper/fiveDigitsRandomNo.js";
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose"
+
 
 
 

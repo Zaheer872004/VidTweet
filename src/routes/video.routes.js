@@ -22,12 +22,10 @@ router.route("/upload-video").post(
     upload.fields(
         [
             {
-                name:"videoFile",
-                maxCount:1
+                name:"videoFile"
             },
             {
-                name:"thumbnail",
-                maxCount:1
+                name:"thumbnail"
             }
         ]
     ), 
@@ -39,21 +37,27 @@ router.route("/get-video/:videoId").get(verifyJWT,getVideoById)
 
 router.route("/get-all-videos").get(getAllVideos)
 
-router.route("/update-videoDetails/:videoId").post(verifyJWT,updateVideoDetails);
+router.route("/update-videoDetails/:videoId").patch(verifyJWT,updateVideoDetails);
 
-router.route("/update-video-thumbnail/:videoId").post(
+
+router.route("/update-video-thumbnail/:videoId").patch(
     verifyJWT,
     upload.single("thumbnail"),
     updateVideoThumbnail
 )
 
-router.route("/delete-video/:videoId").post(verifyJWT,deleteVideo)
 
-router.route("/toggle-published-status/:videoId").post(verifyJWT,togglePublishStatus);
 
-router.route("/getVideo/:videoId").get(verifyJWT,getVideoById);
+router.route("/delete-video/:videoId").delete(verifyJWT,deleteVideo)
+// router.route("/delete-video/:videoId").delete(verifyJWT,deleteVideo)
 
-router.route("get-all-video").get(verifyJWT,getAllVideos);
+
+
+router.route("/toggle-published-status/:videoId").get(verifyJWT,togglePublishStatus);
+
+// router.route("/getVideo/:videoId").get(verifyJWT,getVideoById);
+
+// router.route("get-all-video").get(verifyJWT,getAllVideos);
 
 
 

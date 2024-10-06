@@ -123,6 +123,269 @@ const createVideo = asyncHandler( async (req,res) => {
     }
 })
 
+// Here we Get the all details about the video...
+
+const getVideoById = asyncHandler(async (req, res) => {
+    
+    const { videoId } = req.params
+    
+    if(!videoId){
+        throw new ApiError(400, "Please provide videoId");
+    }
+
+    const video = await Video.findById(videoId);
+
+    if(!video){
+        throw new ApiError(400, "Videos with this id not found");
+    }
+
+    const getVideoById = await Video.aggregate(
+        [
+            {
+                $match : {
+                    _id : new mongoose.Types.ObjectId(videoId)
+                }
+            },
+            // get owner details
+            {
+                $lookup : {
+                    from : "users",
+                    localField : "owner",
+                    foreignField : "_id",
+                    as : "owner",
+                    pipeline : [
+                        {
+                            $project : {
+                                username : 1,
+                                fullName : 1,
+                                avatar : 1,
+                                
+                            }
+                        },
+                        
+                    ]
+                }
+            },
+            
+            // get the likes of the videos
+            {
+                $lookup : {
+                    from : "likes",
+                    localField : "_id",
+                    foreignField : "video",
+                    as : "likes",
+                }
+            },
+            // get the comments of the videos
+            {
+                $lookup : {
+                    from : "comments",
+                    localField : "_id",
+                    foreignField : "video",
+                    as : "comments",
+                    pipeline : [
+                        {
+                            $project : {
+                                content : 1,
+                                owner : 1,
+                                createdAt : 1,
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields : {
+                    owner : {
+                        $first : "$owner"
+                    },
+                    
+                    likesCount : {
+                        $size : "$likes"
+                    },
+                    commentsCount : {
+                        $size : "$comments"
+                    },
+                    isLiked : {
+                        $cond: [ // here below same as ternary operator works...
+                            { 
+                                $in: [req.user?._id, "$likes.likedBy"] 
+                            },
+                            true,
+                            false
+                        ]
+                    }
+                }
+            },
+            {
+                $project: {
+                    title: 1,
+                    description: 1,
+                    videoFile: 1,
+                    thumbnail: 1,
+                    duration: 1,
+                    view: 1,
+                    isPublished: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    // owner: { 
+                    //     username: 1,
+                    //     fullName: 1,
+                    //     avatar: 1,
+                    //     email : 1,
+                    // }, 
+                    likesCount: 1,
+                    commentsCount: 1,
+                    owner: 1,
+                    comments: 1,
+                    isLiked: 1
+                }
+            }
+        ]
+    )
+
+    if(getVideoById.length === 0){
+        throw new ApiError(400, "Video not found");
+    }
+
+    // console.log("getVideoById", getVideoById);
+    console.log("Here is a getVideoById: " + JSON.stringify(getVideoById, null, 2));
+
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    getVideoById
+                },
+                "Video found successfully"
+            )
+        )
+
+})
+
+
+// get all videos controller based on the query, sort, pagination,filtering...
+
+const getAllVideos = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+
+    const filter = {};
+    if (query) {
+        const regex = new RegExp(query, "i");
+        filter.$or = [
+            { title: regex },
+            { description: regex },
+        ];
+    }
+    if (userId) {
+        filter.owner = userId;
+    }
+
+    const sortOptions = {};
+    if (sortBy) {
+        sortOptions[sortBy] = sortType === "asc" ? 1 : -1;
+    }
+
+    console.log("sortOptions", sortOptions);
+
+    try {
+        // Video aggregation pipeline
+        const videos = await Video.aggregate([
+            { $match: filter },
+            { $sort: sortOptions },
+            { $skip: (pageNumber - 1) * limitNumber },
+            { $limit: limitNumber },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [
+                        { $project: { fullName: 1, username: 1, avatar: 1 } },
+                    ],
+                },
+            },
+            {
+                $lookup: {
+                    from: "likes",
+                    localField: "_id",
+                    foreignField: "video",
+                    as: "likes",
+                },
+            },
+            {
+                $lookup: {
+                    from: "comments",
+                    localField: "_id",
+                    foreignField: "video",
+                    as: "comments",
+                    pipeline: [
+                        { $project: { content: 1, createdAt: 1, owner: 1 } },
+                    ],
+                },
+            },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentCount: { $size: "$comments" },
+                },
+            },
+            {
+                $project: {
+                    title: 1,
+                    description: 1,
+                    videoFile: 1,
+                    thumbnail: 1,
+                    owner: 1,
+                    duration: 1,
+                    views: 1,
+                    isPublised: 1,
+                    comments: 1,
+                    likesCount: 1,
+                    commentCount: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                },
+            },
+        ]);
+
+        if (videos.length === 0) {
+            throw new ApiError(404, "Videos not found");
+        }
+
+        const totalVideos = await Video.countDocuments(filter);
+        const totalPages = Math.ceil(totalVideos / limitNumber);
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200, 
+                    {
+                        totalVideos,
+                        totalPages,
+                        currentPage: pageNumber,
+                        limit: limitNumber,
+                        videos,
+                    },
+                    "Videos found successfully"
+                )
+            );
+
+    } catch (error) {
+        console.error("Error fetching videos:", error);
+        throw new ApiError(500, "Internal server error");
+    }
+});
+
+
 
 // update Video details controller...
 
@@ -339,8 +602,11 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     const video = await Video.findByIdAndUpdate(videoId,
         {
             $set : {
-                isPublished : !video.isPublished
+                isPublished : !videoExist.isPublished
             }
+        },
+        {
+            new : true
         }
     )
 
@@ -356,150 +622,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
                 {
                     video
                 },
-                "Video updated successfully"
-            )
-        )
-
-})
-
-// Here we Get the all details about the video...
-
-const getVideoById = asyncHandler(async (req, res) => {
-    
-    const { videoId } = req.params
-    
-    if(!videoId){
-        throw new ApiError(400, "Please provide videoId");
-    }
-
-    const video = await Video.findById(videoId);
-
-    if(!video){
-        throw new ApiError(400, "Videos with this id not found");
-    }
-
-    const getVideoById = await Video.aggregate(
-        [
-            {
-                $match : {
-                    _id : new mongoose.Types.ObjectId(videoId)
-                }
-            },
-            // get owner details
-            {
-                $lookup : {
-                    from : "users",
-                    localField : "owner",
-                    foreignField : "_id",
-                    as : "owner",
-                    pipeline : [
-                        {
-                            $project : {
-                                username : 1,
-                                fullName : 1,
-                                avatar : 1,
-                                
-                            }
-                        },
-                        
-                    ]
-                }
-            },
-            
-            // get the likes of the videos
-            {
-                $lookup : {
-                    from : "likes",
-                    localField : "_id",
-                    foreignField : "video",
-                    as : "likes",
-                }
-            },
-            // get the comments of the videos
-            {
-                $lookup : {
-                    from : "comments",
-                    localField : "_id",
-                    foreignField : "video",
-                    as : "comments",
-                    pipeline : [
-                        {
-                            $project : {
-                                content : 1,
-                                owner : 1,
-                                createdAt : 1,
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                $addFields : {
-                    owner : {
-                        $first : "$owner"
-                    },
-                    
-                    likesCount : {
-                        $size : "$likes"
-                    },
-                    commentsCount : {
-                        $size : "$comments"
-                    },
-                    isLiked : {
-                        $cond: [ // here below same as ternary operator works...
-                            { 
-                                $in: [req.user?._id, "$likes.likedBy"] 
-                            },
-                            true,
-                            false
-                        ]
-                    }
-                }
-            },
-            {
-                $project: {
-                    title: 1,
-                    description: 1,
-                    videoFile: 1,
-                    thumbnail: 1,
-                    duration: 1,
-                    view: 1,
-                    isPublished: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    // owner: { 
-                    //     username: 1,
-                    //     fullName: 1,
-                    //     avatar: 1,
-                    //     email : 1,
-                    // }, 
-                    likesCount: 1,
-                    commentsCount: 1,
-                    owner: 1,
-                    comments: 1,
-                    isLiked: 1
-                }
-            }
-        ]
-    )
-
-    if(getVideoById.length === 0){
-        throw new ApiError(400, "Video not found");
-    }
-
-    // console.log("getVideoById", getVideoById);
-    console.log("Here is a getVideoById: " + JSON.stringify(getVideoById, null, 2));
-
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    getVideoById
-                },
-                "Video found successfully"
+                "Video toggled successfully"
             )
         )
 
@@ -507,177 +630,12 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 
 
-const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
-
-    const pageNumber = parseInt(page)
-    const limitNumber = parseInt(limit)
 
 
-    const filter = {};
-    if(query){
-        const regex = new RegExp(query, "i"); // i stands for case insensitive
-        filter.$or = [
-            { title: regex },
-            { description: regex },
-        ]; 
-    }
-    if(userId){
-        filter.owner = userId
-    }
-
-    // const sortType = "asc"  // 1 means asc, -1 means desc
-    // const sortBy = "createdAt"
-
-    const sortOptions = {};
-    if(sortBy){
-        sortOptions[sortBy] = sortType === "asc" ? 1 : -1;  // sortOptions[sortBy] setting up the dynamic value like sortOptions : { createdAt : 1 or -1 }
-    }
-    console.log("sortOptions", sortOptions);
-
-    // here Video Aggregate pipeline
-    const videos = await Video.aggregate(
-        [
-            {
-                $match : filter
-            },
-            {
-                $sort: sortOptions // Sort by the specified field
-            },
-            {
-                $skip: (pageNumber - 1) * limitNumber // Skip records for pagination
-            },
-            {
-                $limit: limitNumber // Limit the number of records returned
-            },
-
-            // getting the owner of that video
-            {
-                $lookup : {
-                    from : "users",
-                    localField : "owner",
-                    foreignField : "_id",
-                    as : "owner",
-                    pipeline : [
-                        {
-                            $project : {
-                                fullName : 1,
-                                username : 1,
-                                avatar : 1
-                            }
-                        },
-                        
-                    ]
-                }
-            },
-            // getting the likes of that video
-            {
-                $lookup : {
-                    from : "likes",
-                    localField : "_id",
-                    foreignField : "video",
-                    as : "likes",
-                }
-            },
-            // getting the comment of that video
-            {
-                $lookup : {
-                    from : "comments",
-                    localField : "_id",
-                    foreignField : "video",
-                    as : "comments",
-                    pipeline : [
-                        {
-                            $project : {
-                                content : 1,
-                                createdAt : 1,
-                                owner : 1,
-
-                            }
-                        },
-                        
-
-                    ]
-                }
-            },
-            {
-                $addFields: {
-                    likesCount : {
-                        $size : "$likes"
-                    },
-                    commentCount : {
-                        $size : "$comments"
-                    },
-                    // comment : {
-                    //     $first : "$comments"
-                    // }
-                }
-            },
-            {
-                $project: {
-                    
-                    title: 1,
-                    description :1,
-                    videoFile :1,
-                    thumbnail : 1,
-                    owner : 1,
-                    duration : 1,
-                    views : 1,
-                    isPublised : 1,
-
-                    comments : 1,
-                    likesCount : 1,
-                    commentCount: 1,
-
-                    createdAt : 1,
-                    updatedAt : 1,
 
 
-                }
-            }
-
-        ]
-    )
-
-    if(videos.length === 0){
-        throw new ApiError(400, "Videos not found");
-    }
 
 
-    const totalVideos = await Video.countDocuments(filter);
-    const totalPages = Math.ceil(totalVideos / limitNumber);
-    console.log(10/5);
-
-    const response  = await Video.aggregatePaginate(
-        getAllVideos,
-        {
-            pageNumber,
-            limitNumber, 
-        }
-    )
-
-    if(!response) {
-        throw new ApiError(400,"unable to get the videos")
-    }
-
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    response,
-                    totalVideos,
-                    totalPages,
-                    currentPage: pageNumber,
-                    limit: limitNumber,
-                },
-                "Videos found successfully"
-            )
-        )   
-})
 
 export {
     videoHealthCheck,
