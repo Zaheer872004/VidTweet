@@ -1,5 +1,5 @@
 import { ApiError } from "../helper/ApiError.js";
-import { Tweet } from "../models/tweet.model";
+import { Tweet } from "../models/tweet.model.js";
 import {ApiResponse} from "../helper/ApiResponse.js"
 import { asyncHandler } from "../helper/asyncHandler.js";
 import { Like } from "../models/like.model.js";
