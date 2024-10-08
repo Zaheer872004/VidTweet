@@ -32,10 +32,10 @@ const videoSchema = new Schema(
             type : Number,
             default : 0,
         },
-        isPublised: {
-            type : Boolean,
-            default : true,
-        }
+        isPublished: { 
+            type: Boolean, 
+            default: false 
+        },
 
     },{timestamps : true}
 )
