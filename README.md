@@ -102,3 +102,7 @@ VidTweet provides a platform where users can share video-based tweets and engage
     ```bash
     npm run dev  # if you're using npm if not use other like yarn pnpm etc
     
+
+### VidTweet Schema
+
+![alt text](diagram-export-9-29-2024-7_18_21-PM.png)
